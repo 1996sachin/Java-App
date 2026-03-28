@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="260" viewBox="0 0 900 260" role="img" aria-label="Example: Kibana Discover">
+  <defs>
+    <style>
+      .bg { fill: #f7f8fa; }
+      .header { fill: #fff; stroke: #d3dae6; }
+      .bar { fill: #017d73; }
+      .t1 { fill: #343741; font: 600 15px 'Segoe UI', system-ui, sans-serif; }
+      .t2 { fill: #69707d; font: 12px system-ui, sans-serif; }
+      .pill { fill: #e4e7ef; font: 11px ui-monospace, monospace; }
+      .log { fill: #1a1c21; font: 11px ui-monospace, monospace; }
+      .hl { fill: #017d73; font: 700 11px ui-monospace, monospace; }
+      .line { stroke: #d3dae6; stroke-width: 1; }
+      .border { fill: none; stroke: #d3dae6; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect width="900" height="260" class="bg" rx="10"/>
+  <rect x="0.5" y="0.5" width="899" height="259" class="border" rx="10"/>
+  <rect x="0" y="0" width="900" height="44" class="header" rx="10"/>
+  <rect x="0" y="34" width="900" height="10" fill="#fff"/>
+  <rect x="20" y="12" width="4" height="20" class="bar" rx="1"/>
+  <text x="32" y="28" class="t1">Discover ù logstash-*</text>
+  <text x="24" y="72" class="t2">KQL filter</text>
+  <rect x="24" y="80" width="500" height="26" fill="#fff" stroke="#d3dae6" rx="4"/>
+  <text x="36" y="97" class="pill">kubernetes.labels.app: "java-war" and message: *event=ping*</text>
+  <text x="24" y="134" class="t2">Sample document (stdout / container log)</text>
+  <line x1="24" y1="142" x2="876" y2="142" class="line"/>
+  <text x="32" y="166" class="log">@timestamp</text>
+  <text x="200" y="166" class="log">2026-03-28T12:00:00...</text>
+  <text x="32" y="188" class="log">message</text>
+  <text x="200" y="188" class="hl">requestId=... event=ping name=assessment pod=java-war-...</text>
+  <text x="32" y="210" class="log">kubernetes.labels.app</text>
+  <text x="200" y="210" class="log">java-war</text>
+  <text x="24" y="246" class="t2">Replace with your Discover screenshot (PNG) for submission evidence.</text>
+</svg>

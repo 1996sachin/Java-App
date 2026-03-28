@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="200" viewBox="0 0 900 200" role="img" aria-label="Example: kubectl get nodes">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; }
+      .title { fill: #8b949e; font: 12px ui-monospace, 'SF Mono', Consolas, monospace; }
+      .dollar { fill: #58a6ff; font: 13px ui-monospace, monospace; }
+      .cmd { fill: #c9d1d9; font: 13px ui-monospace, monospace; }
+      .green { fill: #3fb950; }
+      .row { fill: #c9d1d9; font: 12px ui-monospace, monospace; }
+      .border { fill: none; stroke: #30363d; stroke-width: 1; }
+    </style>
+  </defs>
+  <rect width="900" height="200" class="bg" rx="10"/>
+  <rect x="0.5" y="0.5" width="899" height="199" class="border" rx="10"/>
+  <text x="24" y="32" class="title">Evidence: cluster topology (1 control-plane + 1 worker)</text>
+  <text x="24" y="60" class="dollar">$</text>
+  <text x="44" y="60" class="cmd">kubectl get nodes -o wide</text>
+  <text x="24" y="92" class="row">NAME                    STATUS   ROLES           AGE   VERSION   INTERNAL-IP</text>
+  <text x="24" y="112" class="row">assessment-control-plane   Ready    control-plane   10m   v1.30.x   172.18.0.2</text>
+  <text x="24" y="132" class="row">assessment-worker          Ready    &lt;none&gt;          10m   v1.30.x   172.18.0.3</text>
+  <text x="24" y="168" class="title">Replace this file with your real screenshot: docs/screenshots/01-cluster-nodes.png</text>
+</svg>

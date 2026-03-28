@@ -1,73 +1,134 @@
-# Kubernetes + Java WAR + Ingress/NodePort + ELK/Filebeat (Assessment Pack)
+<div align="center">
 
-This repo contains **all artifacts** you can submit as deliverables:
+# Assessment pack
 
-- **Java WAR app** (simple servlet + JSP) that writes logs to stdout
-- **Dockerfile** to run the WAR on Tomcat
-- **Kubernetes manifests** for:
-  - Java app `Deployment` + `Service` (+ `NodePort`)
-  - `Ingress` (nginx-compatible)
-  - ELK stack: Elasticsearch + Logstash + Kibana
-  - Filebeat `DaemonSet` collecting container logs and shipping to Logstash
+**Java WAR on Tomcat · Kubernetes · Ingress / NodePort · ELK + Filebeat**
 
-## 0) Folder layout
+*Single repo with buildable app, container image, manifests, and a copy-paste runbook.*
 
-- `app/` – Java WAR source + Maven build
-- `docker/` – Dockerfile for WAR on Tomcat
-- `k8s/app/` – app deployment/service/nodeport/ingress
-- `k8s/elk/` – elasticsearch/logstash/kibana/filebeat
-- `runbook/` – commands and “what to screenshot/capture”
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white)](https://kubernetes.io/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Java](https://img.shields.io/badge/Java-11-E76F00?style=flat&logo=openjdk&logoColor=white)](https://openjdk.org/)
 
-## 1) Cluster setup (Rancher-managed)
+</div>
 
-Your assessment asks for a Rancher-managed cluster (k3s or k8s) with **1 control-plane (master)** and **1 worker**.
+---
 
-Use Rancher UI to:
+## What you get
 
-- Create cluster (RKE2 or k3s are common)
-- Add 2 nodes:
-  - Node A roles: **Control Plane + etcd** (and optionally Worker disabled)
-  - Node B roles: **Worker**
-- Confirm nodes are Ready.
+| Piece | Description |
+|--------|-------------|
+| **App** | Maven WAR with servlet `/api/ping` — logs structured lines (`event=ping`) to **stdout** |
+| **Image** | Multi-stage `Dockerfile`: Maven build → Tomcat 9 (**`ROOT.war`** → served at **`/`**) |
+| **Kubernetes** | `Deployment` + ClusterIP / NodePort / **Ingress** (`nginx`) in `demo` |
+| **Observability** | Elasticsearch, Logstash, Kibana, Filebeat (**Filebeat → Logstash → ES**, index `logstash-*`) |
 
-### Capture for deliverable
-
-Run:
-
-```bash
-kubectl get nodes -o wide
+```mermaid
+flowchart LR
+  subgraph k8s[Kubernetes cluster]
+    FB[Filebeat DaemonSet]
+    APP[java-war pods]
+    LS[Logstash]
+    ES[Elasticsearch]
+    KB[Kibana]
+  end
+  APP -->|container logs| FB
+  FB --> LS --> ES
+  KB --> ES
 ```
 
-Take a screenshot or copy the output showing **two nodes** and their roles/status.
+---
 
-## 2) Build the WAR + container image
+## Repository layout
 
-### Build WAR locally (example)
-
-```bash
-cd app
-./mvnw -q -DskipTests package
-ls -la target/*.war
+```
+assessment/
+├── app/                 # WAR source (Maven)
+├── docker/              # Dockerfile (Tomcat + ROOT.war)
+├── docs/screenshots/    # Evidence gallery (example SVGs — swap for your PNGs)
+├── k8s/
+│   ├── app/             # namespace, deployment, services, ingress
+│   └── elk/             # ES, Logstash, Kibana, Filebeat
+├── kind-config.yaml     # kind: 1 control-plane + 1 worker + port maps
+├── runbook/RUNBOOK.md   # Step-by-step: kind, ingress-nginx, curls, Kibana
+└── README.md
 ```
 
-### Build container image
+---
 
-From repo root:
+## Screenshots (evidence gallery)
+
+Use these as a **layout guide** for assessor-ready captures. The repo ships **illustrative SVGs** under [`docs/screenshots/`](docs/screenshots/); swap them for your own **PNG** (same filenames work in GitHub if you prefer raster) after you run the cluster.
+
+| # | What to capture | Command / UI |
+|---|-----------------|--------------|
+| 1 | **Two Ready nodes** (control-plane + worker) | `kubectl get nodes -o wide` |
+| 2 | **App exposure** (Deployment, Pods, Services, Ingress) | `kubectl -n demo get deploy,po,svc,ingress` |
+| 3 | **Logs in Kibana** (`event=ping`, `java-war` filter) | Discover → data view `logstash-*` |
+
+<p align="center">
+  <img src="docs/screenshots/01-cluster-nodes.svg" alt="Example: kubectl get nodes showing two Ready nodes" width="92%"/><br/>
+  <sub><b>Fig. 1</b> — Cluster nodes (replace with your screenshot)</sub>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/02-app-workload.svg" alt="Example: demo namespace resources" width="92%"/><br/>
+  <sub><b>Fig. 2</b> — App workload &amp; networking</sub>
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/03-kibana-discover.svg" alt="Example: Kibana Discover with java-war and ping logs" width="92%"/><br/>
+  <sub><b>Fig. 3</b> — Kibana Discover (structured ping logs)</sub>
+</p>
+
+**Tip:** On Linux you can capture a window with your usual screenshot tool, or record terminal output to a file and paste into the assessment doc; for browser UI, a full-width **Discover** screenshot reads best.
+
+---
+
+## Prerequisites
+
+- **Docker** (build + optional [kind](https://kind.sigs.k8s.io/) cluster)
+- **kubectl** configured against your cluster
+- For Ingress: **ingress-nginx** (or compatible) — see runbook for kind install snippet
+
+---
+
+## Quick start (local kind)
+
+Full commands, ingress controller install, and troubleshooting live in **[`runbook/RUNBOOK.md`](runbook/RUNBOOK.md)**. TL;DR:
 
 ```bash
+kind create cluster --name assessment --config kind-config.yaml
 docker build -t java-war-demo:1.0.0 -f docker/Dockerfile .
+kind load docker-image java-war-demo:1.0.0 --name assessment
+
+kubectl apply -f k8s/app/namespace.yaml
+kubectl apply -f k8s/app/
+kubectl apply -f k8s/elk/namespace.yaml
+kubectl apply -f k8s/elk/
 ```
 
-Push to your registry (example):
+**Access (default kind mapping in `kind-config.yaml`):**
+
+- **NodePort:** `http://localhost:30080/` and `http://localhost:30080/api/ping?name=demo`
+- **Ingress:** add `127.0.0.1 java.demo.local` to `/etc/hosts`, then `http://java.demo.local:8088/` (host **8088** → container 80 when port 80 is already in use on the host)
+
+Label the control-plane node **`ingress-ready=true`** if the ingress controller stays Pending (see runbook).
+
+---
+
+## Build & image
 
 ```bash
-docker tag java-war-demo:1.0.0 <your-registry>/java-war-demo:1.0.0
-docker push <your-registry>/java-war-demo:1.0.0
+cd app && ./mvnw -q -DskipTests package && ls -la target/java-war-demo.war
+cd .. && docker build -t java-war-demo:1.0.0 -f docker/Dockerfile .
 ```
 
-Then update the image in `k8s/app/deployment.yaml`.
+Push and re-tag if your cluster pulls from a registry; update `image:` in [`k8s/app/deployment.yaml`](k8s/app/deployment.yaml).
 
-## 3) Deploy app + expose via NodePort + Ingress
+---
+
+## Deploy app
 
 ```bash
 kubectl apply -f k8s/app/namespace.yaml
@@ -75,84 +136,70 @@ kubectl apply -f k8s/app/
 kubectl -n demo get deploy,po,svc,ingress -o wide
 ```
 
-### NodePort access
+| Service | Role |
+|---------|---------|
+| `java-war-svc` | ClusterIP **:8080** |
+| `java-war-svc-nodeport` | NodePort **30080** → app |
+| `java-war-ingress` | Host **`java.demo.local`**, class **`nginx`** |
 
-```bash
-kubectl -n demo get svc java-war-svc-nodeport
-```
+---
 
-Use any node’s IP:
-
-`http://<any-node-ip>:30080/java-war-demo/`
-
-### Ingress access
-
-This pack assumes an nginx ingress controller is installed in your cluster.
-
-Add a DNS record (or local `/etc/hosts`) for:
-
-- `java.demo.local` → your ingress external IP / load balancer IP / node IP (depending on your setup)
-
-Then:
-
-`http://java.demo.local/java-war-demo/`
-
-## 4) Deploy ELK + Filebeat (in-cluster)
-
-Apply manifests:
+## ELK + Filebeat
 
 ```bash
 kubectl apply -f k8s/elk/namespace.yaml
 kubectl apply -f k8s/elk/
-kubectl -n observability get all
+kubectl -n observability get pods
 ```
 
-Port-forward Kibana:
+**Kibana:** `kubectl -n observability port-forward svc/kibana 5601:5601` → [http://localhost:5601](http://localhost:5601)
 
-```bash
-kubectl -n observability port-forward svc/kibana 5601:5601
-```
+Create a data view **`logstash-*`** with time field **`@timestamp`**. In Discover, filter:
 
-Open:
+`kubernetes.labels.app : "java-war"`
 
-`http://localhost:5601`
+---
 
-### Kibana data view
-
-Create a Data View:
-
-- Name: `logstash-*`
-- Timestamp field: `@timestamp`
-
-Then open **Discover** and filter:
-
-- `kubernetes.labels.app : "java-war"`
-
-## 5) Generate traffic + verify logs
+## Generate traffic & verify
 
 ```bash
 kubectl -n demo port-forward svc/java-war-svc 8080:8080
-curl -sS http://localhost:8080/java-war-demo/
-curl -sS "http://localhost:8080/java-war-demo/api/ping?name=assessment"
+curl -sS "http://localhost:8080/api/ping?name=assessment"
+kubectl -n demo logs deploy/java-war --tail=100
 ```
 
-Check app logs:
+You should see Tomcat startup and **`event=ping`** lines from `PingServlet`.
+
+---
+
+## Cluster topology (assessment target)
+
+The brief targets **one control-plane** and **one worker** — achievable with Rancher (RKE2 / k3s) or locally with **kind** using [`kind-config.yaml`](kind-config.yaml).
+
+Evidence:
 
 ```bash
-kubectl -n demo logs deploy/java-war --tail=200
+kubectl get nodes -o wide
 ```
 
-Check Filebeat + Logstash:
+---
 
-```bash
-kubectl -n observability logs ds/filebeat --tail=100
-kubectl -n observability logs deploy/logstash --tail=200
-```
+## Notes & assumptions
 
-## Notes / assumptions
+| Topic | Detail |
+|-------|--------|
+| **Storage** | Elasticsearch uses dev-oriented sizing / `emptyDir` — fine for demos, not production |
+| **Logs path** | Filebeat reads node **`/var/log/containers/*.log`** |
+| **Indices** | Logstash writes **`logstash-YYYY.MM.dd`** |
+| **Context path** | WAR is **`ROOT.war`** — app base path is **`/`**, not `/java-war-demo/` |
 
-- This pack uses:
-  - **Elasticsearch single-node** (dev/test sizing) with `emptyDir` storage (OK for assessment demos).
-  - Filebeat reads **container logs** from `/var/log/containers/*.log` on each node.
-  - Filebeat ships to **Logstash**, Logstash writes to **Elasticsearch index** `logstash-YYYY.MM.dd`.
+---
 
+## Deliverables checklist
+
+- [ ] Cluster: 2 nodes Ready (`kubectl get nodes`)
+- [ ] Image built; pods Running (`kubectl -n demo get po`)
+- [ ] Service + NodePort + Ingress documented / tested
+- [ ] ELK + Filebeat applied; Kibana Discover shows **`java-war`** logs
+
+For copy-paste evidence commands, use **[`runbook/RUNBOOK.md`](runbook/RUNBOOK.md)**.
