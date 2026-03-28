@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if command -v mvn >/dev/null 2>&1; then
+  exec mvn -f "${DIR}/pom.xml" "$@"
+fi
+
+echo "mvn not found. Please install Maven, then rerun." >&2
+exit 1
+
